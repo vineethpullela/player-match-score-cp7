@@ -92,9 +92,9 @@ app.get("players/:playerId/matches", async (request, response) => {
   const { playerId } = request.params;
   const getPlayerMatchesQuery = `
      select
-     match_details.match_id,
-     match_details.match,
-     match_details.year
+     match_id,
+     match,
+     year
      from (match_details inner join player_match_score
      on match_details.match_id = player_match_score.match_id) 
      where player_match_score.player_id = '${playerId}'
@@ -107,7 +107,7 @@ app.get("players/:playerId/matches", async (request, response) => {
       year: match.year,
     };
   });
-  response.send(PlayerMatches);
+  response.send(playerMatches);
 });
 
 //API 6
@@ -117,7 +117,13 @@ app.get("/matches/:matchId/players", async (request, response) => {
   const getPlayerMatchesQuery = `select player_details.player_id as playerId,
   player_name as playerName from player_details left join player_match_score on player_details.player_id=player_match_score.player_id where match_id = ${matchId};`;
   const playerMatchesArray = await db.all(getPlayerMatchesQuery);
-  response.send(playerMatchesArray);
+  const responseObject = playerMatchesArray.map((player) => {
+    return {
+      playerId: player.playerId,
+      playerName: player.playerName,
+    };
+  });
+  response.send(responseObject);
 });
 
 //API 7
@@ -126,13 +132,25 @@ app.get("/players/:playerId/playerScores", async (request, response) => {
   const { playerId } = request.params;
   const getStatisticsQuery = `
     select player_details.player_id as playerId,
-    player_details.player_name as player_Name,
+    player_details.player_name as playerName,
     sum(player_match_score.score) as totalScore,
     sum(player_match_score.fours) as totalFours,
     sum(player_match_score.sixes) as totalSixes
     from player_match_score inner join player_details on player_match_score.player_id = player_details.player_id where player_match_score.player_id = '${playerId}'
     group by player_match_score.player_id`;
   const playerStatistics = await db.get(getStatisticsQuery);
+  const responsePlayerStatistics = (player) => {
+    return {
+      playerId: player.playerId,
+      playerName: player.playerName,
+      totalScore: player.totalScore,
+      totalFours: player.totalFours,
+      totalSixes: player.totalSixes,
+    };
+  };
+  const result = responsePlayerStatistics(playerStatistics);
 
-  response.send(playerStatistics);
+  response.send(result);
 });
+
+module.exports = app;
