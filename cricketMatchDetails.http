@@ -8,4 +8,11 @@ PUT http://localhost:3004/players/11/
 ###
 
 GET http://localhost:3004/matches/18/
+###
+
+GET http://localhost:3004/players/1/playerScores
+####
+
+
+GET http://localhost:3004/matches/1/players
 
