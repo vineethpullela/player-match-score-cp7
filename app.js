@@ -42,7 +42,7 @@ app.get("/players/", async (request, response) => {
 
 app.get("/players/:playerId/", async (request, response) => {
   const { playerId } = request.params;
-  const getPlayerQuery = `select  * from player_details where player_id = ${playerId}`;
+  const getPlayerQuery = `select * from player_details where player_id = ${playerId};`;
 
   const player = await db.get(getPlayerQuery);
   const responsePlayer = (player) => {
@@ -92,10 +92,13 @@ app.get("players/:playerId/matches", async (request, response) => {
   const { playerId } = request.params;
   const getPlayerMatchesQuery = `
      select
-     match_details.match_id,match_details.match,match_details.year  
-     
-     from (match_details inner join player_match_score on match_details.match_id=player_match_score.match_id)
-     where player_id = ${playerId};`;
+     match_details.match_id,
+     match_details.match,
+     match_details.year
+     from (match_details inner join player_match_score
+     on match_details.match_id = player_match_score.match_id) 
+     where player_match_score.player_id = '${playerId}'
+     order by player.match_score.player_id;`;
   const playerMatches = await db.all(getPlayerMatchesQuery);
   const responsePlayerMatches = playerMatches.map((match) => {
     return {
@@ -104,14 +107,15 @@ app.get("players/:playerId/matches", async (request, response) => {
       year: match.year,
     };
   });
-  response.send(playerMatches);
+  response.send(PlayerMatches);
 });
 
 //API 6
 
 app.get("/matches/:matchId/players", async (request, response) => {
   const { matchId } = request.params;
-  const getPlayerMatchesQuery = `select * from player_details left join player_match_score on player_details.player_id=player_match_score.player_id where match_id = ${matchId};`;
+  const getPlayerMatchesQuery = `select player_details.player_id as playerId,
+  player_name as playerName from player_details left join player_match_score on player_details.player_id=player_match_score.player_id where match_id = ${matchId};`;
   const playerMatchesArray = await db.all(getPlayerMatchesQuery);
   response.send(playerMatchesArray);
 });
@@ -121,18 +125,14 @@ app.get("/matches/:matchId/players", async (request, response) => {
 app.get("/players/:playerId/playerScores", async (request, response) => {
   const { playerId } = request.params;
   const getStatisticsQuery = `
-    select 
-    player_id,player_name,sum(score) as score,count(fours) as fours,count(sixes) as sixes  from player_details inner join player_match_score on player_details.player_id=player_match_score.player_id where player_id = ${playerId};`;
-  const playerStatistics = await db.all(getStatisticsQuery);
-  const responsePlayerStatistics = (player) => {
-    return {
-      playerId: player.player_id,
-      playerName: player.player_name,
-      totalScore: player.score,
-      totalFours: player.fours,
-      totalSixes: player.sixes,
-    };
-  };
-  const result = responsePlayerStatistics(playerStatistics);
-  response.send(result);
+    select player_details.player_id as playerId,
+    player_details.player_name as player_Name,
+    sum(player_match_score.score) as totalScore,
+    sum(player_match_score.fours) as totalFours,
+    sum(player_match_score.sixes) as totalSixes
+    from player_match_score inner join player_details on player_match_score.player_id = player_details.player_id where player_match_score.player_id = '${playerId}'
+    group by player_match_score.player_id`;
+  const playerStatistics = await db.get(getStatisticsQuery);
+
+  response.send(playerStatistics);
 });
