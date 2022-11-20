@@ -115,7 +115,7 @@ app.get("/players/:playerId/matches", async (request, response) => {
 app.get("/matches/:matchId/players", async (request, response) => {
   const { matchId } = request.params;
   const getPlayerMatchesQuery = `SELECT player_details.player_id,
-  player_name FROM (match_details INNER JOIN player_match_score ON match_details.match_id=player_match_score.match_id) AS T INNER JOIN player_details ON T.player_id=player_details.player_id WHERE match_details.match_id = ${matchId};`;
+  player_details.player_name FROM (match_details INNER JOIN player_match_score ON match_details.match_id=player_match_score.match_id) AS T INNER JOIN player_details ON T.player_id=player_details.player_id WHERE match_details.match_id = ${matchId} ORDER BY player_details.player_id;`;
   const playerMatchesArray = await db.all(getPlayerMatchesQuery);
   const responseObject = playerMatchesArray.map((player) => {
     return {
@@ -128,16 +128,18 @@ app.get("/matches/:matchId/players", async (request, response) => {
 
 //API 7
 
-app.get("/players/:playerId/playerScores", async (request, response) => {
+app.get("/players/:playerId/playerScores/", async (request, response) => {
   const { playerId } = request.params;
   const getStatisticsQuery = `
-    SELECT player_details.player_id,
-    player_details.player_name,
+    SELECT player_details.player_id AS playerId,
+    player_details.player_name AS playerName,
     SUM(player_match_score.score) AS totalScore,
     SUM(player_match_score.fours) AS totalFours,
     SUM(player_match_score.sixes) AS totalSixes
-    FROM player_match_score INNER JOIN player_details ON player_match_score.player_id = player_details.player_id WHERE player_match_score.player_id = ${playerId}
-    GROUP BY player_match_score.player_id`;
+    FROM player_match_score INNER JOIN player_details 
+    ON player_match_score.player_id = player_details.player_id 
+    WHERE player_match_score.player_id = '${playerId}'
+    GROUP BY player_match_score.player_id;`;
   const playerStatistics = await db.get(getStatisticsQuery);
   const responsePlayerStatistics = (player) => {
     return {
