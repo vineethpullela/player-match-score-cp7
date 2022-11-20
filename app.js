@@ -88,17 +88,17 @@ app.get("/matches/:matchId/", async (request, response) => {
 
 //API 5
 
-app.get("players/:playerId/matches", async (request, response) => {
+app.get("/players/:playerId/matches", async (request, response) => {
   const { playerId } = request.params;
   const getPlayerMatchesQuery = `
-     select
+     SELECT 
      match_id,
      match,
      year
-     from (match_details inner join player_match_score
-     on match_details.match_id = player_match_score.match_id) 
-     where player_match_score.player_id = '${playerId}'
-     order by player.match_score.player_id;`;
+     FROM (match_details NATURAL JOIN player_match_score
+     ) 
+     WHERE player_match_score.player_id = ${playerId}
+     ORDER BY player_match_score.player_id;`;
   const playerMatches = await db.all(getPlayerMatchesQuery);
   const responsePlayerMatches = playerMatches.map((match) => {
     return {
@@ -107,20 +107,20 @@ app.get("players/:playerId/matches", async (request, response) => {
       year: match.year,
     };
   });
-  response.send(playerMatches);
+  response.send(responsePlayerMatches);
 });
 
 //API 6
 
 app.get("/matches/:matchId/players", async (request, response) => {
   const { matchId } = request.params;
-  const getPlayerMatchesQuery = `select player_details.player_id as playerId,
-  player_name as playerName from player_details left join player_match_score on player_details.player_id=player_match_score.player_id where match_id = ${matchId};`;
+  const getPlayerMatchesQuery = `SELECT player_details.player_id,
+  player_name FROM (match_details INNER JOIN player_match_score ON match_details.match_id=player_match_score.match_id) AS T INNER JOIN player_details ON T.player_id=player_details.player_id WHERE match_details.match_id = ${matchId};`;
   const playerMatchesArray = await db.all(getPlayerMatchesQuery);
   const responseObject = playerMatchesArray.map((player) => {
     return {
-      playerId: player.playerId,
-      playerName: player.playerName,
+      playerId: player.player_id,
+      playerName: player.player_name,
     };
   });
   response.send(responseObject);
