@@ -20,7 +20,7 @@ const playerMatchScoresDbServer = async () => {
     console.log(`DB error ${e.message}`);
   }
 };
-module.exports = app;
+
 playerMatchScoresDbServer();
 
 //API 1
@@ -42,7 +42,7 @@ app.get("/players/", async (request, response) => {
 
 app.get("/players/:playerId/", async (request, response) => {
   const { playerId } = request.params;
-  const getPlayerQuery = `select * from player_details where player_id = ${playerId};`;
+  const getPlayerQuery = `SELECT * FROM player_details WHERE player_id = ${playerId};`;
 
   const player = await db.get(getPlayerQuery);
   const responsePlayer = (player) => {
@@ -131,13 +131,13 @@ app.get("/matches/:matchId/players", async (request, response) => {
 app.get("/players/:playerId/playerScores", async (request, response) => {
   const { playerId } = request.params;
   const getStatisticsQuery = `
-    select player_details.player_id as playerId,
-    player_details.player_name as playerName,
-    sum(player_match_score.score) as totalScore,
-    sum(player_match_score.fours) as totalFours,
-    sum(player_match_score.sixes) as totalSixes
-    from player_match_score inner join player_details on player_match_score.player_id = player_details.player_id where player_match_score.player_id = '${playerId}'
-    group by player_match_score.player_id`;
+    SELECT player_details.player_id AS playerId,
+    player_details.player_name AS playerName,
+    SUM(player_match_score.score) AS totalScore,
+    SUM(player_match_score.fours) AS totalFours,
+    SUM(player_match_score.sixes) AS totalSixes
+    FROM player_match_score INNER JOIN player_details ON player_match_score.player_id = player_details.player_id WHERE player_match_score.player_id = '${playerId}'
+    GROUP BY player_match_score.player_id`;
   const playerStatistics = await db.get(getStatisticsQuery);
   const responsePlayerStatistics = (player) => {
     return {
