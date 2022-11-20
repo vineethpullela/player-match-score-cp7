@@ -131,18 +131,18 @@ app.get("/matches/:matchId/players", async (request, response) => {
 app.get("/players/:playerId/playerScores", async (request, response) => {
   const { playerId } = request.params;
   const getStatisticsQuery = `
-    SELECT player_details.player_id AS playerId,
-    player_details.player_name AS playerName,
+    SELECT player_details.player_id,
+    player_details.player_name,
     SUM(player_match_score.score) AS totalScore,
     SUM(player_match_score.fours) AS totalFours,
     SUM(player_match_score.sixes) AS totalSixes
-    FROM player_match_score INNER JOIN player_details ON player_match_score.player_id = player_details.player_id WHERE player_match_score.player_id = '${playerId}'
+    FROM player_match_score INNER JOIN player_details ON player_match_score.player_id = player_details.player_id WHERE player_match_score.player_id = ${playerId}
     GROUP BY player_match_score.player_id`;
   const playerStatistics = await db.get(getStatisticsQuery);
   const responsePlayerStatistics = (player) => {
     return {
-      playerId: player.playerId,
-      playerName: player.playerName,
+      playerId: player.player_id,
+      playerName: player.player_name,
       totalScore: player.totalScore,
       totalFours: player.totalFours,
       totalSixes: player.totalSixes,
