@@ -22,6 +22,7 @@ const playerMatchScoresDbServer = async () => {
 };
 
 playerMatchScoresDbServer();
+module.exports = app;
 
 //API 1
 
@@ -115,20 +116,14 @@ app.get("/players/:playerId/matches", async (request, response) => {
 app.get("/matches/:matchId/players", async (request, response) => {
   const { matchId } = request.params;
   const getPlayerMatchesQuery = `SELECT 
-  player_details.player_id,
-  player_details.player_name
+  player_details.player_id AS playerId,
+  player_details.player_name AS playerName
   FROM (match_details INNER JOIN player_match_score 
   ON match_details.match_id=player_match_score.match_id) AS T 
   INNER JOIN player_details 
   ON T.player_id=player_details.player_id WHERE match_details.match_id = ${matchId};`;
   const playerMatchesArray = await db.all(getPlayerMatchesQuery);
-  const responseObject = playerMatchesArray.map((player) => {
-    return {
-      playerId: player.player_id,
-      playerName: player.player_name,
-    };
-  });
-  response.send(responseObject);
+  response.send(playerMatchesArray);
 });
 
 //API 7
@@ -136,8 +131,8 @@ app.get("/matches/:matchId/players", async (request, response) => {
 app.get("/players/:playerId/playerScores/", async (request, response) => {
   const { playerId } = request.params;
   const getStatisticsQuery = `
-    SELECT player_details.player_id ,
-    player_details.player_name ,
+    SELECT player_details.player_id AS playerId,
+    player_details.player_name AS playerName,
     SUM(player_match_score.score) AS totalScore,
     SUM(player_match_score.fours) AS totalFours,
     SUM(player_match_score.sixes) AS totalSixes
@@ -146,18 +141,5 @@ app.get("/players/:playerId/playerScores/", async (request, response) => {
     WHERE player_match_score.player_id = '${playerId}'
     GROUP BY player_match_score.player_id;`;
   const playerStatistics = await db.get(getStatisticsQuery);
-  const responsePlayerStatistics = (player) => {
-    return {
-      playerId: player.player_id,
-      playerName: player.player_name,
-      totalScore: player.totalScore,
-      totalFours: player.totalFours,
-      totalSixes: player.totalSixes,
-    };
-  };
-  const result = responsePlayerStatistics(playerStatistics);
-
-  response.send(result);
+  response.send(playerStatistics);
 });
-
-module.exports = app;
