@@ -63,7 +63,7 @@ app.put("/players/:playerId/", async (request, response) => {
   const playerDetails = request.body;
   const { playerName } = playerDetails;
   const updatePlayerQuery = `
-    UPDATE player_details SET player_name ='${playerName}';`;
+    UPDATE player_details SET player_name ='${playerName}' WHERE player_id = ${playerId};`;
   await db.run(updatePlayerQuery);
   response.send("Player Details Updated");
 });
